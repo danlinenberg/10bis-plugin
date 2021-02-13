@@ -1,0 +1,12 @@
+{
+  "manifest_version": 2,
+  "name": "?תנביס - כמה חרגתי",
+  "description": "Calculate your noon 10Bis expenses",
+  "version": "1.5",
+
+  "browser_action": {
+   "default_icon": "icon.png",
+   "default_popup": "popup.html"
+  },
+  "permissions": ["tabs", "<all_urls>"]
+}
