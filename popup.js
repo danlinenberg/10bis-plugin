@@ -1,3 +1,5 @@
+let token = '' // Add your token here. To find the token, open 10bis and look for "UserTransactionsReport" in network tab and then search for 'user-token' in the headers.
+
 document.addEventListener('DOMContentLoaded', function() {
   var checkPageButton = document.getElementById('checkPage');
   checkPageButton.addEventListener('click', function() {
@@ -5,38 +7,49 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sum').innerHTML = "Calculating...";
     document.getElementById('sum').style.color = 'black';
 
-  	var theUrl = "https://www.10bis.co.il/Account/UserReport"
-    getHTML(theUrl, function(res){
-        console.log(res);
-        // var reports = res.getElementsByClassName("userReportDataTbl");
-        var reportRow = res.getElementsByClassName("reportDataTr")
-        var totalprice = 0;
-        for(i=0; i<reportRow.length; i++){
-            let time = reportRow[i].getElementsByClassName("reportDataTd")[2].textContent.trim().replace(":","");
-            if(time<1800){
-              let price = parseFloat(reportRow[i].getElementsByClassName("currency reverse_direction")[0].textContent.trim().replace(/[^0-9.-]/,''));
-              console.log(time + " " + price);
-              if(price){
-                  totalprice = totalprice + ((price - 50)>0 ? price-50 : 0);
-              }
-            }
-        }
+    let apiUrl = 'https://www.10bis.co.il/NextApi/UserTransactionsReport'
 
-        document.getElementById('sum').innerHTML = "Total: " + totalprice.toFixed(1) + '  ' + ('\u20AA');
-        if(totalprice>0){
-            document.getElementById('sum').style.color = 'red';
+    postData(apiUrl, token, null)
+      .then(data => {
+        let orders = data.Data.orderList
+        let total = 0
+        orders.forEach(order=>{
+          let tm = order.orderTimeStr.replace(':','')
+          console.log(tm)
+          if(tm<1900)
+            total = total + order.total
+        })
+        console.log(total)
+        document.getElementById('sum').innerHTML = "Total: " + total.toFixed(1) + '  ' + ('\u20AA');
+        if(total<0){
+          document.getElementById('sum').style.color = 'red';
         }else{
-            document.getElementById('sum').style.color = '#00BB00';
+          document.getElementById('sum').style.color = '#00BB00';
         }    
-        // console.log("Total noon price: " + totalprice);
-
-    });
-
-
-  }, false);
+      })
+  })
 });
 
-var getHTML = function ( url, callback ) {
+async function postData (url = '', token = '', data = {}) {
+  // Default options are marked with *
+  const response = await fetch(url, {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    mode: 'cors', // no-cors, *cors, same-origin
+    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      'Content-Type': 'application/json',
+      'user-token': token
+      // 'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    redirect: 'follow', // manual, *follow, error
+    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    body: JSON.stringify(data) // body data type must match "Content-Type" header
+  });
+  return response.json(); // parses JSON response into native JavaScript objects
+};
+
+var getHTML = function (url, callback ) {
 
     // Feature detection
     if ( !window.XMLHttpRequest ) return;
@@ -55,6 +68,23 @@ var getHTML = function ( url, callback ) {
     xhr.open( 'GET', url );
     xhr.responseType = 'document';
     xhr.send();
-
 };
 
+function isWeekday(year, month, day) {
+var day = new Date(year, month, day).getDay();
+return day !=5 && day !=6;
+}
+
+ function daysInMonth(iMonth, iYear)
+    {
+    return 32 - new Date(iYear, iMonth, 32).getDate();
+    }
+
+function getWeekdaysInMonth(month, year) {
+var days = daysInMonth(month, year);
+var weekdays = 0;
+for(var i=0; i< days; i++) {
+    if (isWeekday(year, month, i+1)) weekdays++;
+}
+return weekdays;
+};
